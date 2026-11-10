@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrazione - Quiz Università</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <h1 class="auth-title">Registrazione</h1>
+
+            {% if error %}
+                <div class="auth-error">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="/register" class="auth-form">
+
+                <input type="text" name="website" tabindex="-1" autocomplete="off"
+                       style="position:absolute; left:-9999px; top:-9999px; height:1px; width:1px;" aria-hidden="true">
+
+                <div class="pw-field">
+                    <label for="username">Username</label>
+                    <div class="pw-wrap">
+                        <input id="username" name="username" type="text" autocomplete="username" required class="auth-input">
+                    </div>
+                    <div class="auth-hint">Solo lettere, numeri e underscore.</div>
+                </div>
+
+                <div class="pw-field">
+                    <label for="password">Password</label>
+                    <div class="pw-wrap">
+                        <input id="password" name="password" type="password" autocomplete="new-password" required class="auth-input">
+                        <button class="pw-eye" type="button" data-target="password" aria-label="Mostra/nascondi password"><i class="fa-solid fa-eye-slash"></i></button>
+                    </div>
+
+                    <div class="pw-meter">
+                        <div class="pw-bar"><div id="pwBarReg" class="pw-bar-fill s0"></div></div>
+                        <div id="pwLabelReg" class="pw-label">Forza: -</div>
+                    </div>
+
+                    <div class="auth-hint">
+                        Min 8 caratteri, almeno 1 maiuscola, 1 minuscola, 1 numero, 1 speciale.
+                    </div>
+                </div>
+
+                <div class="pw-field">
+                    <label for="password2">Ripeti password</label>
+                    <div class="pw-wrap">
+                        <input id="password2" name="password2" type="password" autocomplete="new-password" required class="auth-input">
+                        <button class="pw-eye" type="button" data-target="password2" aria-label="Mostra/nascondi password"><i class="fa-solid fa-eye-slash"></i></button>
+                    </div>
+                </div>
+
+                <button class="btn primary auth-submit" type="submit">Crea account</button>
+            </form>
+
+            <div class="auth-footer">
+                Hai già un account? <a href="/login">Accedi</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function scorePassword(pw) {
+            let score = 0;
+            if (!pw) return { score: 0, label: "-" };
+            const len = pw.length;
+            const hasLower = /[a-z]/.test(pw);
+            const hasUpper = /[A-Z]/.test(pw);
+            const hasDigit = /\d/.test(pw);
+            const hasSpecial = /[^A-Za-z0-9]/.test(pw);
+            const variety = [hasLower, hasUpper, hasDigit, hasSpecial].filter(Boolean).length;
+
+            if (len >= 8) score += 1;
+            if (len >= 12) score += 1;
+            if (len >= 16) score += 1;
+            if (variety >= 2) score += 1;
+            if (variety >= 3) score += 1;
+            if (variety >= 4) score += 1;
+
+            score = Math.min(score, 5);
+            const labels = ["Molto debole", "Debole", "Ok", "Buona", "Forte", "Molto forte"];
+            return { score, label: labels[score] };
+        }
+
+        function updateStrength() {
+            const input = document.getElementById("password");
+            const bar = document.getElementById("pwBarReg");
+            const lab = document.getElementById("pwLabelReg");
+            if (!input || !bar || !lab) return;
+            const { score, label } = scorePassword(input.value);
+            bar.style.width = `${(score / 5) * 100}%`;
+            lab.textContent = `Forza: ${label}`;
+            bar.classList.remove("s0","s1","s2","s3","s4","s5");
+            bar.classList.add(`s${score}`);
+        }
+
+
+
+        const pw = document.getElementById("password");
+        if (pw) pw.addEventListener("input", updateStrength);
+        updateStrength();
+    </script>
+
+    <script>
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".pw-eye");
+  if (!btn) return;
+
+  const input = document.getElementById(btn.dataset.target);
+  const icon = btn.querySelector("i");
+  if (!input || !icon) return;
+
+  const hidden = input.type === "password";
+  input.type = hidden ? "text" : "password";
+
+  // visibile -> occhio aperto, nascosta -> occhio sbarrato
+  icon.classList.toggle("fa-eye", hidden);
+  icon.classList.toggle("fa-eye-slash", !hidden);
+});
+</script>
+</body>
+</html>

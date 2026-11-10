@@ -1,0 +1,6 @@
+# Versioni compatibili da verificare periodicamente nell'ambiente locale.
+Flask>=3.0,<4
+SQLAlchemy>=2.0,<3
+reportlab>=4.0,<5
+Pillow>=10,<13
+# Il driver mysqlclient è opzionale ed è necessario solo per MySQL in produzione.

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Università</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=37">
+    <script src="{{ url_for('static', filename='quiz.js') }}?v=36" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+    <style>
+      /* Voice controls v2: chiari, contestuali, senza dipendenze CSS esterne. */
+      .voice-intro[hidden], .voice-settings[hidden] { display: none !important; }
+      .voice-intro {display:flex;align-items:flex-start;gap:14px;border:1px solid rgba(58,120,208,.32);border-radius:14px;padding:14px 16px;margin:12px 0 16px;background:rgba(58,120,208,.075);color:inherit;}
+      .voice-intro-icon {display:grid;place-items:center;flex:none;width:37px;height:37px;background:rgba(58,120,208,.13);border-radius:11px;color:#3677d9;font-size:1.15rem;}
+      .voice-intro-content {min-width:0;flex:1;display:grid;gap:6px;}
+      .voice-intro-content strong {font-size:.97rem;line-height:1.3;}
+      .voice-intro-content p {margin:0;font-size:.86rem;line-height:1.55;opacity:.85;}
+      .voice-intro-actions {display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:3px;}
+      .voice-intro-actions label {display:inline-flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;}
+      .voice-intro-actions input {accent-color:#0f766e;width:16px;height:16px;}
+      .voice-intro-start {border:0;border-radius:9px;padding:9px 12px;font:inherit;font-size:.84rem;font-weight:700;cursor:pointer;background:#2563a8;color:#fff;}
+      .voice-intro-close {background:none;border:0;color:inherit;opacity:.75;cursor:pointer;font:inherit;min-width:28px;min-height:28px;border-radius:7px;}
+      .voice-panel {position:relative;border:1px solid rgba(125,136,151,.18);border-radius:12px;background:rgba(127,137,150,.03);margin:0 0 12px;padding:8px 10px;color:inherit;}
+      .voice-panel-main {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+      .voice-toggle {display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:5px 11px;border-radius:999px;border:1px solid rgba(121,136,153,.34);background:rgba(255,255,255,.02);color:inherit;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;line-height:1;}
+      .voice-toggle i {font-size:.95rem;}
+      .voice-toggle.is-active {background:rgba(15,118,110,.16);border-color:rgba(15,118,110,.52);color:#c9fff5;}
+      .voice-toggle:disabled {opacity:.52;cursor:not-allowed;}
+      .voice-settings-button {display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:6px 10px;border:1px solid rgba(121,136,153,.28);border-radius:999px;background:transparent;color:inherit;cursor:pointer;font:inherit;font-size:.80rem;line-height:1;}
+      .voice-settings-button[aria-expanded="true"] {background:rgba(128,140,156,.12);}
+      .voice-settings-button i {opacity:.84;}
+      .voice-delay-summary {margin-left:auto;white-space:nowrap;font-size:.76rem;padding:4px 8px;border-radius:999px;background:rgba(127,137,150,.10);opacity:.86;}
+      .voice-settings {margin:9px 0 0;border-top:1px solid rgba(127,137,150,.14);padding-top:10px;}
+      .voice-panel-options {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+      .voice-auto-check,.voice-delay-label {display:inline-flex;align-items:center;gap:8px;font-size:.86rem;cursor:pointer;}
+      .voice-auto-check input {accent-color:#0f766e;width:18px;height:18px;}
+      .voice-panel select {min-height:36px;padding:6px 10px;max-width:180px;color:inherit;background:transparent;border:1px solid rgba(121,136,153,.45);border-radius:8px;}
+      .voice-panel option {background:#fff;color:#1d2430;}
+      .voice-panel button:focus-visible,.voice-intro button:focus-visible,.voice-panel select:focus-visible {outline:3px solid #80afe8;outline-offset:2px;}
+      .voice-status {font-size:.77rem;margin:7px 0 0;line-height:1.35;opacity:.82;}
+      .voice-status[data-state="listening"]::before {content:"";display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;margin-right:7px;}
+      .voice-status[data-state="waiting"] {font-weight:650;}
+      .voice-status[data-state="warning"] {color:#d97706;opacity:1;}
+      .voice-panel-help {font-size:.79rem;opacity:.78;line-height:1.45;margin:9px 0 0;}
+      .answer-list li.voice-lettered-answer {display:flex;align-items:center;gap:11px;}
+      .answer-list li.voice-lettered-answer > div {min-width:0;flex:1;}
+      .voice-option-letter {display:inline-flex;align-items:center;justify-content:center;flex:0 0 29px;width:29px;height:29px;border:1px solid rgba(117,133,154,.32);border-radius:8px;background:rgba(117,133,154,.1);font-weight:750;font-size:.89rem;line-height:1;}
+      .answer-list li.voice-lettered-answer.selected .voice-option-letter {border-color:currentColor;}
+      .voice-activity {position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;height:30px;border:1px solid rgba(110,128,156,.26);border-radius:50%;background:rgba(115,129,146,.06);color:#8d9cae;}
+      .voice-activity-dot {position:absolute;width:7px;height:7px;border-radius:50%;background:currentColor;}
+      .voice-activity-bars {display:none;align-items:center;justify-content:center;gap:2px;height:16px;}
+      .voice-activity-bars i {width:2px;height:4px;border-radius:5px;background:currentColor;transform-origin:center;}
+      .voice-activity[data-state="listening"] {color:#16b98d;border-color:rgba(22,185,141,.54);background:rgba(22,185,141,.09);}
+      .voice-activity[data-state="listening"]::before,.voice-activity[data-state="listening"]::after {content:"";position:absolute;inset:1px;border:1px solid currentColor;border-radius:50%;opacity:0;animation:voiceRipple 2.2s infinite;pointer-events:none;}
+      .voice-activity[data-state="listening"]::after {animation-delay:1.1s;}
+      .voice-activity[data-state="hearing"] {color:#16c997;border-color:#16c997;background:rgba(22,185,141,.16);}
+      .voice-activity[data-state="hearing"] .voice-activity-dot {display:none;}
+      .voice-activity[data-state="hearing"] .voice-activity-bars {display:flex;}
+      .voice-activity[data-state="hearing"] .voice-activity-bars i {animation:voiceWave .55s ease-in-out infinite alternate;}
+      .voice-activity[data-state="hearing"] .voice-activity-bars i:nth-child(2) {animation-delay:-.27s;}
+      .voice-activity[data-state="hearing"] .voice-activity-bars i:nth-child(3) {animation-delay:-.12s;}
+      .voice-activity[data-state="hearing"] .voice-activity-bars i:nth-child(4) {animation-delay:-.42s;}
+      .voice-activity[data-state="hearing"] .voice-activity-bars i:nth-child(5) {animation-delay:-.22s;}
+      .voice-activity[data-state="pending"] {color:#efba51;border-color:rgba(239,186,81,.55);}
+      .voice-activity[data-state="waiting"] {color:#60a5fa;border-color:rgba(96,165,250,.5);}
+      .voice-activity[data-state="paused"] {color:#e6a656;}
+      .voice-status[data-state="hearing"] {color:#15a783;opacity:1;font-weight:650;}
+      .voice-panel:not(.voice-enabled) .voice-delay-summary,
+      .voice-panel:not(.voice-enabled) .voice-status,
+      .voice-panel:not(.voice-enabled) .voice-activity {display:none;}
+      .voice-panel:not(.voice-enabled) .voice-panel-main {gap:7px;}
+      .voice-panel:not(.voice-enabled) {padding:6px 8px;background:transparent;border-color:rgba(125,136,151,.12);}
+      .voice-panel.voice-settings-open .voice-status,
+      .voice-panel.voice-enabled .voice-status {display:block;}
+      .voice-panel.voice-settings-open .voice-delay-summary,
+      .voice-panel.voice-settings-open .voice-activity {display:inline-flex;}
+      .voice-panel.voice-settings-open:not(.voice-enabled) .voice-delay-summary {display:inline-flex;align-items:center;}
+      .voice-panel.voice-settings-open:not(.voice-enabled) .voice-status {display:block;}
+      .voice-panel.voice-settings-open:not(.voice-enabled) .voice-activity {display:inline-flex;opacity:.7;}
+      .voice-panel:not(.voice-enabled) .voice-toggle-label-short {display:inline;}
+      .voice-panel.voice-enabled .voice-toggle-label-short {display:none;}
+      .voice-panel:not(.voice-enabled) .voice-toggle-label-full {display:none;}
+      .voice-panel.voice-enabled .voice-toggle-label-full {display:inline;}
+      @keyframes voiceRipple {0%{transform:scale(.77);opacity:.65}100%{transform:scale(1.5);opacity:0}}
+      @keyframes voiceWave {0%{height:4px}100%{height:19px}}
+      @media (prefers-reduced-motion:reduce) {.voice-activity *,.voice-activity::before,.voice-activity::after {animation:none!important;transition:none!important;}}
+      @media (max-width:600px) {
+        .voice-intro {padding:12px;gap:9px;}
+        .voice-intro-icon {width:32px;height:32px;}
+        .voice-panel {padding:6px 8px;margin:0 0 10px;}
+        .voice-panel-main {gap:6px;}
+        .voice-toggle,.voice-settings-button {min-height:32px;padding:5px 9px;font-size:.78rem;}
+        .voice-delay-summary {margin-left:0;order:3;width:auto;max-width:100%;text-align:center;}
+        .voice-panel-options {align-items:flex-start;}
+        .voice-delay-label {width:100%;justify-content:space-between;}
+        .voice-panel-help {font-size:.76rem;}
+        .voice-status {font-size:.74rem;}
+      }
+    </style>
+</head>
+<body>
+    <script>
+    // Applica il tema prima di disegnare l'interfaccia; default = scuro.
+    (function () {
+        try {
+            if (localStorage.getItem('universityQuiz.theme.v1') === 'light') {
+                document.body.classList.add('light-theme');
+            }
+        } catch (_) { /* preferenza disponibile solo per questa pagina */ }
+    })();
+    </script>
+    <div class="quiz-wrapper">
+        <!-- HEADER CENTRATO + TEMA -->
+        <header class="quiz-header">
+            <div class="header-top">
+                <h1>Quiz Università</h1>
+
+                <div class="user-menu header-user-menu">
+<button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Attiva tema chiaro" aria-pressed="false" title="Passa al tema chiaro">
+                            <span class="theme-toggle-glyph" aria-hidden="true">☀</span>
+                        </button>
+<button id="userMenuBtn" class="user-avatar" type="button" aria-label="Profilo">
+                        {{ (username[:2] if username else "U")|upper }}
+                    </button>
+                    <div id="userMenuDropdown" class="user-dropdown" style="display:none;">
+                        <button id="changePwOpen" class="user-dropdown-item" type="button">Cambia password</button>
+                        <form method="POST" action="/logout" style="margin:0;">
+                            <button class="user-dropdown-item danger" type="submit">Logout</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- selettore materia centrato -->
+            <div class="header-controls">
+
+
+                <select id="dbSelect" class="btn ghost" style="min-height: 36px; padding: 6px 10px;">
+                    <option value="" selected disabled>Seleziona una materia</option>
+                    <!-- opzioni caricate via JS da /api/databases -->
+                </select>
+                <button id="searchOpenBtn" class="btn ghost search-open-btn" type="button">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    Cerca
+                </button>
+            </div>
+
+            <div class="score-board">
+                <div class="score-pill correct-pill">
+                    <span class="label">Corrette</span>
+                    <span id="correctCount" class="value">0</span>
+                </div>
+                <div class="score-pill wrong-pill">
+                    <span class="label">Sbagliate</span>
+                    <span id="incorrectCount" class="value">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Avviso introduttivo: chiusura locale, opzionale persistente. -->
+        <aside class="voice-intro" id="voiceIntroBanner" aria-labelledby="voiceIntroTitle" hidden>
+            <div class="voice-intro-icon" aria-hidden="true"><i class="fa-solid fa-microphone-lines"></i></div>
+            <div class="voice-intro-content">
+                <strong id="voiceIntroTitle">Novità: puoi rispondere ai quiz usando la voce</strong>
+                <p>Per rispondere pronuncia «Rispondi A», «Rispondi B», «Rispondi C» o «Rispondi D». Non usare la singola lettera. Puoi anche dire «salva domanda», «prossima» e «pausa». Il microfono si attiva solo quando lo scegli. Imposta l'attesa dopo la correzione da <strong>1 a 5 secondi</strong> tramite «Impostazioni voce» accanto al microfono, sopra la domanda.</p>
+                <div class="voice-intro-actions">
+                    <button type="button" class="voice-intro-start" id="voiceBannerStart"><i class="fa-solid fa-microphone" aria-hidden="true"></i> Attiva microfono</button>
+                    <label for="voiceBannerDontShow"><input id="voiceBannerDontShow" type="checkbox"> Non mostrare più</label>
+                </div>
+            </div>
+            <button type="button" class="voice-intro-close" id="voiceBannerClose" aria-label="Chiudi avviso" title="Chiudi avviso"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </aside>
+
+        <!-- STATISTICHE SESSIONE -->
+        <section class="session-bar">
+            <div class="session-item">
+                <span class="session-label">Domande risposte</span>
+                <span id="answeredCount" class="session-value">0</span>
+            </div>
+            <div class="session-item">
+                <span class="session-label">Accuratezza</span>
+                <span id="accuracy" class="session-value">0%</span>
+            </div>
+            <div class="session-item session-performance">
+                <span class="session-label">Valutazione</span>
+                <span id="performanceLabel" class="session-value">-</span>
+            </div>
+            <button id="resetSessionBtn" class="btn small-btn ghost">
+                Reset sessione
+            </button>
+            <button id="exportPdfBtn" class="btn ghost" type="button">Scarica PDF</button>
+        </section>
+
+        <!-- MODALITÀ A TAB -->
+        <section class="mode-section">
+            <span class="mode-label">Modalità</span>
+
+            <div class="mode-tabs">
+                <button class="mode-tab active" data-mode="training">Allenamento</button>
+                <button class="mode-tab" data-mode="exam">Simulazione</button>
+            </div>
+        </section>
+
+        <!-- SEZIONI IMPOSTAZIONI MODALITÀ -->
+        <section class="mode-settings">
+            <!-- Allenamento -->
+            <div id="trainingSettings" class="settings-block">
+                <div class="settings-row">
+                    <label for="startingQuestion">Inizia dalla domanda numero</label>
+                    <input type="number" id="startingQuestion" min="1" value="1">
+                    <span id="totalQuestions" class="total-questions-label">/ 0</span>
+                    <button id="dbInfoBtn"
+                            class="db-info-btn"
+                            type="button"
+                            aria-label="Info database"
+                            title="Info database">
+                        ⓘ
+                    </button>
+
+                    <div id="dbInfoPopover" class="db-info-popover" role="dialog" aria-modal="false" aria-hidden="true" aria-labelledby="dbInfoTitle">
+                        <div class="db-info-title" id="dbInfoTitle">Info</div>
+                        <div class="db-info-body" id="dbInfoBody">Caricamento…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulazione -->
+            <div id="examSettings" class="settings-block" style="display:none;">
+                <div class="settings-row">
+                    <label for="examQuestionCount">Numero domande simulazione</label>
+                    <input type="number" id="examQuestionCount" min="1" max="200" value="30">
+                </div>
+                <div class="settings-row">
+                    <label class="inline">
+                        <input type="checkbox" id="examTimerEnabled">
+                        Attiva timer simulazione
+                    </label>
+                    <div class="timer-input-group">
+                        <label for="examTimerMinutes">Minuti</label>
+                        <input type="number" id="examTimerMinutes" min="1" max="180" value="30">
+                    </div>
+                </div>
+            </div>
+
+            
+            <div id="poolSection" class="pool-section" style="display:none;">
+                <div class="pool-head">
+                    <div>
+                        <div class="pool-eyebrow">COMPOSIZIONE DEL TEST</div>
+                        <div class="pool-title">Scegli i pool di domande</div>
+                        <div class="pool-subtitle">Attiva le fonti che vuoi includere e regola il loro peso.</div>
+                    </div>
+                    <div class="pool-summary" aria-live="polite">
+                        <span id="poolActiveCount">0 pool attivi</span>
+                        <strong id="poolTotalWeight">100%</strong>
+                    </div>
+                </div>
+                <div class="pool-toolbar">
+                    <button id="poolEqualizeBtn" class="pool-tool-btn" type="button">
+                        Distribuisci equamente
+                    </button>
+                </div>
+                <div id="poolSliders" class="pool-sliders"></div>
+                <div id="poolWarning" class="pool-warning" style="display:none;"></div>
+            </div>
+
+<div class="settings-actions">
+                <button id="startButton" class="btn primary">Inizia</button>
+
+            </div>
+        </section>
+
+        <!-- LAYOUT PRINCIPALE: SIDEBAR + CONTENUTO -->
+        <main class="layout-main">
+            <!-- SIDEBAR SIMULAZIONE -->
+            <aside class="sidebar" id="examSidebar" style="display:none;">
+                <div class="sidebar-title">Domande</div>
+                <div id="examQuestionList" class="sidebar-list">
+                    <!-- numeri domande simulazione -->
+                </div>
+            </aside>
+
+            <!-- CONTENUTO QUIZ -->
+            <section class="quiz-main">
+                <!-- CARD DOMANDA -->
+                <section class="question-card">
+                    <!-- Controllo vocale sempre vicino alla domanda: toggle + impostazioni chiare -->
+                    <section class="voice-panel" id="voicePanel" aria-label="Controllo vocale quiz">
+                        <div class="voice-panel-main">
+                            <button type="button" id="voiceToggleBtn" class="voice-toggle" aria-pressed="false" aria-label="Attiva microfono per i quiz" title="Attiva microfono">
+                                <i class="fa-solid fa-microphone-slash" aria-hidden="true"></i><span id="voiceToggleLabel"><span class="voice-toggle-label-short">Voce OFF</span><span class="voice-toggle-label-full">Voce spenta</span></span>
+                            </button>
+                            <div id="voiceActivity" class="voice-activity" data-state="idle" role="img" aria-label="Microfono non in ascolto">
+                                <span class="voice-activity-dot" aria-hidden="true"></span>
+                                <span class="voice-activity-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                            </div>
+                            <button type="button" id="voiceSettingsBtn" class="voice-settings-button" aria-expanded="false" aria-controls="voiceSettings" title="Configura tempo di attesa e avanzamento">
+                                <i class="fa-solid fa-sliders" aria-hidden="true"></i> Impostazioni voce
+                            </button>
+                            <span id="voiceDelaySummary" class="voice-delay-summary">Avanzamento automatico · 2 s</span>
+                        </div>
+                        <div id="voiceSettings" class="voice-settings" hidden>
+                            <div class="voice-panel-options">
+                                <label class="voice-auto-check" for="voiceAutoAdvance">
+                                    <input type="checkbox" id="voiceAutoAdvance" checked>
+                                    Avanzamento automatico dopo la correzione (solo Allenamento)
+                                </label>
+                                <label class="voice-delay-label" for="voiceAdvanceDelay">Attesa dopo la correzione
+                                    <select id="voiceAdvanceDelay" aria-label="Attesa dopo la correzione">
+                                        <option value="1000">1 secondo</option>
+                                        <option value="2000" selected>2 secondi</option>
+                                        <option value="3000">3 secondi</option>
+                                        <option value="4000">4 secondi</option>
+                                        <option value="5000">5 secondi</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <p class="voice-panel-help">Comandi: «Rispondi A», «Rispondi B», «Rispondi C», «Rispondi D», «salva domanda», «rimuovi salvataggio», «prossima», «precedente», «pausa», «riprendi». In Simulazione la soluzione resta nascosta fino alla consegna.</p>
+                        </div>
+                        <p class="voice-status" id="voiceStatus" role="status" aria-live="polite">Microfono spento. Attivalo e pronuncia «Rispondi A».</p>
+                    </section>
+
+                    <div class="question-meta q-meta-flex">
+                        <div class="q-meta-left">
+                            <span id="domanda-id" class="question-id">ID Domanda: -</span>
+                            <span id="sourcePill" class="source-pill" style="display:none;"></span>
+                        </div>
+
+                        <span id="timerDisplay" class="timer-display" style="display:none;">00:00</span>
+                        <span id="savedCount" class="saved-badge">Salvate: 0</span>
+                        <button id="saveStar" class="star-btn" type="button" aria-label="Salva/Rimuovi domanda">
+                            <i class="fa-regular fa-star"></i>
+                        </button>
+                    </div>
+
+                    <!-- STATO RIPASSO PERSONALIZZATO -->
+                    <div id="activeReviewProgress" class="active-review-progress"
+                         aria-live="polite" style="display:none;">
+                        <div class="active-review-top">
+                            <div class="active-review-identity">
+                                <span class="active-review-icon" aria-hidden="true">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </span>
+                                <span class="active-review-copy">
+                                    <small>RIPASSO PERSONALE</small>
+                                    <strong id="activeReviewLabel">Categoria</strong>
+                                </span>
+                            </div>
+                            <strong id="activeReviewPosition" class="active-review-position">0/0</strong>
+                        </div>
+                        <div class="active-review-track" role="progressbar"
+                             aria-label="Avanzamento ripasso" aria-valuemin="0"
+                             aria-valuemax="100" aria-valuenow="0">
+                            <div id="activeReviewFill" class="active-review-fill"></div>
+                        </div>
+                    </div>
+
+                    <!-- progress bar (soprattutto per simulazione) -->
+                    <div id="progressBarWrapper" class="progress-wrapper" style="display:none;">
+                        <div class="progress-info">
+                            <span id="progressLabel">Domanda 0/0</span>
+                            <span id="progressAnswered">0 risposte</span>
+                        </div>
+                        <div class="progress-bar" role="progressbar" aria-label="Avanzamento simulazione"
+                             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                            <div id="progressFill" class="progress-fill"></div>
+                        </div>
+                    </div>
+
+                    <div id="domanda" class="question-text"></div>
+
+                    <ul id="risposte" class="answer-list"></ul>
+
+                    <p id="result" class="result-text"></p>
+
+                    <div class="question-footer">
+                        <div class="nav-buttons">
+                            <button id="nextBtn" class="btn primary" onclick="nextQuestion()">
+                                Prossima domanda
+                            </button>
+                            <button id="prevBtn" class="btn ghost" onclick="prevQuestion()">
+                                Domanda precedente
+                            </button>
+                            <button id="finishExamBtn" class="btn exam-submit-btn" type="button" style="display:none;">
+                                <i class="fa-solid fa-flag-checkered" aria-hidden="true"></i>
+                                Consegna simulazione
+                            </button>
+                        </div>
+
+                    </div>
+                
+                    <!-- CARD LOADER (Material 3 + Skeleton) -->
+                    <div id="cardLoader" class="card-loader hidden" role="status" aria-live="polite" aria-label="Caricamento domanda">
+                        <div class="card-loader-inner">
+                            <div class="loader-top">
+                                <div class="skel-line loader-meta-line"></div>
+                                <div class="skel-pill"></div>
+                            </div>
+                            <div class="skeleton" aria-hidden="true">
+                                <div class="skel-line w-95"></div>
+                                <div class="skel-line w-90"></div>
+                                <div class="skel-line w-60"></div>
+                                <div class="skel-answers">
+                                    <div class="skel-choice"><span></span></div>
+                                    <div class="skel-choice"><span></span></div>
+                                    <div class="skel-choice"><span></span></div>
+                                    <div class="skel-choice"><span></span></div>
+                                </div>
+                            </div>
+                            <span id="cardLoaderText" class="loader-text">Carico la domanda…</span>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- SEZIONE DOMANDE SALVATE -->
+                <section class="saved-section">
+                    <div class="saved-actions">
+                        <button id="startSavedButton" class="btn success" onclick="startSavedQuiz()">
+                            Inizia quiz con domande salvate
+                        </button>
+                        <button id="clearSavedQuestions" class="btn danger-outline" onclick="clearSavedQuestions()">
+                            Cancella tutte le domande salvate
+                        </button>
+                    </div>
+                </section>
+
+                <!-- RIPASSO PERSONALIZZATO -->
+                <section id="reviewSection" class="review-section">
+                    <div class="review-head">
+                        <div class="review-head-icon" aria-hidden="true">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <div class="review-eyebrow">BASATO SUI TUOI RISULTATI</div>
+                            <h2>Ripasso personale</h2>
+                            <p>Scegli quali domande allenare in base alle risposte precedenti.</p>
+                        </div>
+                    </div>
+
+                    <div class="review-grid">
+                        <button class="review-card review-errors" type="button" data-review-category="errors">
+                            <span class="review-card-icon" aria-hidden="true">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </span>
+                            <span class="review-card-copy">
+                                <strong>Errori frequenti</strong>
+                                <small>Ultimo tentativo errato o rendimento basso</small>
+                            </span>
+                            <span id="reviewErrorsCount" class="review-count">0</span>
+                        </button>
+
+                        <button class="review-card review-consolidate" type="button" data-review-category="consolidate">
+                            <span class="review-card-icon" aria-hidden="true">
+                                <i class="fa-solid fa-seedling"></i>
+                            </span>
+                            <span class="review-card-copy">
+                                <strong>Da consolidare</strong>
+                                <small>In miglioramento, ancora da stabilizzare</small>
+                            </span>
+                            <span id="reviewConsolidateCount" class="review-count">0</span>
+                        </button>
+
+                        <button class="review-card review-strengths" type="button" data-review-category="strengths">
+                            <span class="review-card-icon" aria-hidden="true">
+                                <i class="fa-solid fa-shield-heart"></i>
+                            </span>
+                            <span class="review-card-copy">
+                                <strong>Punti forti</strong>
+                                <small>Mai sbagliate o corrette con continuità</small>
+                            </span>
+                            <span id="reviewStrengthsCount" class="review-count">0</span>
+                        </button>
+                    </div>
+
+                    <div id="reviewHistoryStatus" class="review-history-status" aria-live="polite">
+                        Le domande cambiano categoria in base ai tuoi progressi.
+                    </div>
+                </section>
+
+                <!-- RIEPILOGO FINALE SIMULAZIONE -->
+                <section id="examSummary" class="exam-summary" style="display: none;"></section>
+            </section>
+        </main>
+    </div>
+
+    <!-- CONFERMA CONSEGNA / ABBANDONO SIMULAZIONE -->
+    <div id="confirmModal" class="modal confirm-modal" role="dialog" aria-modal="true"
+         aria-hidden="true" aria-labelledby="confirmModalTitle" aria-describedby="confirmModalMessage"
+         style="display:none;">
+        <div class="modal-card confirm-modal-card" tabindex="-1">
+            <div class="confirm-modal-icon" aria-hidden="true">
+                <i class="fa-solid fa-flag-checkered"></i>
+            </div>
+            <div class="modal-body confirm-modal-body">
+                <h3 id="confirmModalTitle">Conferma operazione</h3>
+                <p id="confirmModalMessage"></p>
+                <div id="confirmModalDetail" class="confirm-modal-detail"></div>
+            </div>
+            <div class="modal-footer confirm-modal-actions">
+                <button id="confirmModalCancel" class="btn ghost" type="button">Continua il test</button>
+                <button id="confirmModalAccept" class="btn primary" type="button">Conferma</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE RICERCA DOMANDE -->
+    <div id="searchModal" class="modal search-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="searchModalTitle" style="display:none;">
+        <div class="modal-card search-modal-card" tabindex="-1">
+            <div class="modal-header">
+                <div>
+                    <div class="search-eyebrow">DOMANDE E RISPOSTE</div>
+                    <h3 id="searchModalTitle">Cerca nella materia</h3>
+                </div>
+                <button id="searchCloseBtn" class="btn ghost small-btn" type="button" aria-label="Chiudi ricerca">✕</button>
+            </div>
+            <div class="modal-body search-modal-body">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input id="searchInput" type="search" minlength="2" maxlength="120"
+                           autocomplete="off" placeholder="Es. protocollo HTTP, matrice, algoritmo…"
+                           aria-label="Parole chiave da cercare">
+                    <button id="searchSubmitBtn" class="btn primary" type="button">Cerca</button>
+                </div>
+                <div id="searchStatus" class="search-status" aria-live="polite">
+                    Inserisci almeno due caratteri. Puoi usare più parole.
+                </div>
+                <div id="searchResults" class="search-results"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE CAMBIO PASSWORD -->
+    <div id="changePwModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="changePwTitle" style="display:none;">
+        <div class="modal-card" tabindex="-1">
+            <div class="modal-header">
+                <h3 id="changePwTitle">Cambia password</h3>
+                <button id="changePwClose" class="btn ghost small-btn" type="button" aria-label="Chiudi">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="pw-field">
+                    <label for="currentPassword">Password attuale</label>
+                    <div class="pw-wrap">
+                        <input id="currentPassword" type="password" autocomplete="current-password" />
+                        <button class="pw-eye" type="button" data-target="currentPassword" aria-label="Mostra/nascondi password"><i class="fa-solid fa-eye-slash"></i></button>
+                    </div>
+                </div>
+
+                <div class="pw-field">
+                    <label for="newPassword">Nuova password</label>
+                    <div class="pw-wrap">
+                        <input id="newPassword" type="password" autocomplete="new-password" />
+                        <button class="pw-eye" type="button" data-target="newPassword" aria-label="Mostra/nascondi password"><i class="fa-solid fa-eye-slash"></i></button>
+                    </div>
+                    <div class="pw-meter">
+                        <div class="pw-bar"><div id="pwBarChange" class="pw-bar-fill s0"></div></div>
+                        <div id="pwLabelChange" class="pw-label">Forza: -</div>
+                    </div>
+                </div>
+
+                <div class="pw-field">
+                    <label for="newPassword2">Ripeti nuova password</label>
+                    <div class="pw-wrap">
+                        <input id="newPassword2" type="password" autocomplete="new-password" />
+                        <button class="pw-eye" type="button" data-target="newPassword2" aria-label="Mostra/nascondi password"><i class="fa-solid fa-eye-slash"></i></button>
+                    </div>
+                </div>
+
+                <div id="changePwMsg" class="form-msg"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="changePwSubmit" class="btn primary" type="button">Aggiorna</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="backToTopBtn" class="back-to-top" type="button"
+            aria-label="Torna all'inizio della pagina" title="Torna su">
+        <i class="fa-solid fa-chevron-up" aria-hidden="true"></i>
+    </button>
+    <script>
+    (function () {
+        var KEY = 'universityQuiz.theme.v1';
+        var button = document.getElementById('themeToggleBtn');
+        if (!button) return;
+        function refresh() {
+            var light = document.body.classList.contains('light-theme');
+            button.setAttribute('aria-pressed', String(light));
+            button.setAttribute('aria-label', light ? 'Attiva tema scuro' : 'Attiva tema chiaro');
+            button.title = light ? 'Passa al tema scuro' : 'Passa al tema chiaro';
+            var glyph = button.querySelector('.theme-toggle-glyph');
+            if (glyph) glyph.textContent = light ? '☾' : '☀';
+        }
+        button.addEventListener('click', function () {
+            var light = document.body.classList.toggle('light-theme');
+            try { localStorage.setItem(KEY, light ? 'light' : 'dark'); } catch (_) {}
+            refresh();
+        });
+        refresh();
+    })();
+    </script>
+</body>
+</html>

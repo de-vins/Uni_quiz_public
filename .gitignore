@@ -1,0 +1,40 @@
+# Ambiente locale e credenziali (non pubblicare neppure su repository privati)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Database applicativo + database delle materie
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# File di lavoro e allegati
+instance/*
+!instance/.gitkeep
+instance/exports/
+data/*
+!data/.gitkeep
+*.log
+*.bak
+*.backup
+*.zip
+
+# IDE e sistema operativo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

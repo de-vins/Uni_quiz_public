@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Quiz Università</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <h1 class="auth-title">Login</h1>
+
+            {% if request.args.get('registered') == '1' %}
+                <div class="auth-success">✅ Account creato! Puoi effettuare il login.</div>
+            {% endif %}
+
+            {% if error %}
+                <div class="auth-error">{{ error }}</div>
+            {% endif %}
+
+
+            <form method="POST" action="/login" class="auth-form">
+                <input type="hidden" name="next" value="{{ next or '/' }}">
+
+                <div class="pw-field">
+                    <label for="username">Username</label>
+                    <div class="pw-wrap">
+                        <input id="username" name="username" type="text" autocomplete="username" required class="auth-input">
+                    </div>
+                </div>
+
+                <div class="pw-field">
+                    <label for="password">Password</label>
+                    <div class="pw-wrap">
+                        <input id="password" name="password" type="password" autocomplete="current-password" required class="auth-input">
+                        <button class="pw-eye" type="button" data-target="password" aria-label="Mostra/nascondi password"><i class="fa-solid fa-eye-slash"></i></button>
+                    </div>
+                </div>
+
+                <button class="btn primary auth-submit" type="submit">Entra</button>
+            </form>
+
+            <div class="auth-footer">
+                Non hai un account? <a href="/register">Registrati</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".pw-eye");
+  if (!btn) return;
+
+  const input = document.getElementById(btn.dataset.target);
+  const icon = btn.querySelector("i");
+  if (!input || !icon) return;
+
+  const hidden = input.type === "password";
+  input.type = hidden ? "text" : "password";
+
+  // visibile -> occhio aperto, nascosta -> occhio sbarrato
+  icon.classList.toggle("fa-eye", hidden);
+  icon.classList.toggle("fa-eye-slash", !hidden);
+});
+</script>
+</body>
+</html>
